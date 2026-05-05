@@ -1,5 +1,13 @@
-const CACHE = 'sparemap-v1';
-const ASSETS = ['/sparemap/', '/sparemap/index.html', '/sparemap/db.js', '/sparemap/sw.js', '/sparemap/manifest.json'];
+const CACHE = 'sparemap-v2';
+const ASSETS = [
+  './',
+  './index.html',
+  './db.js',
+  './sw.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
+];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
   self.skipWaiting();
@@ -12,6 +20,6 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('/index.html')))
+    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./index.html')))
   );
 });
