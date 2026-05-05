@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SpareMap"/>
+<meta name="theme-color" content="#0A1628"/>
+<title>SpareMap</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="db.js"></script>
+<style>
+:root{
+  --bg:#0A1628;
+  --bg2:#111E35;
+  --bg3:#162440;
+  --bg4:#1D2E50;
+  --border:#1F3060;
+  --border2:#263870;
+  --teal:#00C896;
+  --teal-dim:#003D2E;
+  --teal-pale:#E0FBF4;
+  --amber:#F59E0B;
+  --amber-dim:#3D2800;
+  --red:#EF4444;
+  --red-dim:#3D0F0F;
+  --blue:#3B82F6;
+  --blue-dim:#0D1F3D;
+  --purple:#A78BFA;
+  --purple-dim:#1E1040;
+  --text:#F0F4FF;
+  --text2:#8899CC;
+  --text3:#445580;
+  --font:'DM Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);}
+#app{height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* STATUS BAR */
+.sbar{background:var(--bg);padding:calc(var(--safe-top) + 5px) 18px 4px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sbar-time{font-size:13px;font-weight:600;letter-spacing:.02em;}
+.sbar-r{font-size:11px;color:var(--text2);display:flex;gap:5px;align-items:center;}
+
+/* SCREENS */
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.screen.on{display:flex;}
+
+/* HEADER */
+.hdr{background:var(--bg2);padding:10px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border);flex-shrink:0;}
+.hdr-back{color:var(--teal);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;min-width:56px;}
+.hdr-center{text-align:center;flex:1;}
+.hdr-title{font-size:15px;font-weight:600;color:var(--text);}
+.hdr-sub{font-size:9px;color:var(--text3);margin-top:1px;}
+.hdr-action{color:var(--teal);font-size:12px;cursor:pointer;min-width:56px;text-align:right;}
+
+/* SCROLLABLE BODY */
+.body{flex:1;overflow-y:auto;padding:12px 14px;-webkit-overflow-scrolling:touch;background:var(--bg);}
+.body::-webkit-scrollbar{display:none;}
+
+/* BOTTOM NAV */
+.bnav{background:var(--bg2);border-top:0.5px solid var(--border);display:flex;padding:6px 0 calc(var(--safe-bot)+4px);flex-shrink:0;}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:3px 0;position:relative;}
+.bni-icon{font-size:20px;opacity:.35;transition:opacity .15s,transform .15s;}
+.bni-icon.on{opacity:1;transform:scale(1.08);}
+.bni-label{font-size:8px;color:var(--text3);transition:color .15s;}
+.bni-label.on{color:var(--teal);}
+.bni-badge{position:absolute;top:0;right:18px;background:var(--red);color:#fff;font-size:8px;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--bg2);}
+
+/* CARDS */
+.card{background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;margin-bottom:10px;}
+.card-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
+
+/* PART CARD */
+.part-card{background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .12s,transform .1s;}
+.part-card:active{transform:scale(0.98);}
+.part-card.low{border-left:3px solid var(--amber);border-radius:0 12px 12px 0;}
+.part-card.out{border-left:3px solid var(--red);border-radius:0 12px 12px 0;}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;gap:8px;}
+.pc-name{font-size:13px;font-weight:600;color:var(--text);flex:1;line-height:1.3;}
+.pc-qty{font-size:15px;font-weight:600;min-width:28px;text-align:right;flex-shrink:0;}
+.pc-arabic{font-size:10px;color:var(--text3);direction:rtl;margin-bottom:7px;}
+.pc-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+
+/* LOCATION BADGE */
+.loc{display:inline-flex;align-items:center;background:var(--teal-dim);border:0.5px solid var(--teal);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--teal);font-family:var(--mono);letter-spacing:.04em;}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:9px;font-weight:600;letter-spacing:.02em;}
+.b-teal{background:var(--teal-dim);color:var(--teal);}
+.b-green{background:#0F3320;color:#4ADE80;}
+.b-amber{background:var(--amber-dim);color:var(--amber);}
+.b-red{background:var(--red-dim);color:var(--red);}
+.b-blue{background:var(--blue-dim);color:var(--blue);}
+.b-gray{background:var(--bg4);color:var(--text2);}
+.b-purple{background:var(--purple-dim);color:var(--purple);}
+
+/* STATS GRID */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat{background:var(--bg2);border-radius:10px;border:0.5px solid var(--border);padding:10px 12px;}
+.stat-num{font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1;}
+.stat-label{font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+
+/* SEARCH */
+.search-wrap{background:var(--bg2);border-radius:12px;border:0.5px solid var(--border2);display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:10px;transition:border-color .15s;}
+.search-wrap:focus-within{border-color:var(--teal);}
+.search-icon{font-size:15px;opacity:.4;flex-shrink:0;}
+.search-input{border:none;outline:none;font-size:13px;background:transparent;color:var(--text);flex:1;font-family:var(--font);}
+.search-input::placeholder{color:var(--text3);}
+
+/* FILTER TABS */
+.filter-scroll{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.filter-scroll::-webkit-scrollbar{display:none;}
+.ft{padding:5px 12px;border-radius:16px;border:0.5px solid var(--border2);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .12s;}
+.ft.on{background:var(--teal);color:#0A1628;border-color:var(--teal);font-weight:600;}
+
+/* INPUTS */
+input,select,textarea{background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;padding:10px 12px;font-family:var(--font);width:100%;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
+select option{background:var(--bg3);}
+textarea{resize:none;}
+.label{font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+
+/* BUTTONS */
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .1s;margin-bottom:8px;letter-spacing:.01em;}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--teal);color:#0A1628;}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);}
+.btn-danger{background:var(--red-dim);color:var(--red);border:0.5px solid var(--red);}
+.btn-sm{padding:7px 14px;font-size:11px;width:auto;border-radius:8px;margin-bottom:0;}
+
+/* SECTION TITLE */
+.sec{font-size:9px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:12px 0 7px;}
+
+/* DETAIL ROWS */
+.dr{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);}
+.dr:last-child{border:none;}
+.dr-label{font-size:11px;color:var(--text2);}
+.dr-val{font-size:12px;font-weight:500;color:var(--text);text-align:right;}
+
+/* LOCATION DISPLAY */
+.loc-display{background:var(--teal-dim);border:0.5px solid var(--teal);border-radius:14px;padding:18px;text-align:center;margin-bottom:10px;}
+.loc-tag{font-size:9px;color:var(--teal);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;opacity:.7;}
+.loc-addr{font-size:36px;font-weight:600;color:var(--teal);font-family:var(--mono);letter-spacing:.08em;line-height:1;}
+.loc-parts{display:flex;justify-content:center;gap:20px;margin-top:10px;}
+.lp{text-align:center;}
+.lp-val{font-size:20px;font-weight:600;color:var(--teal);font-family:var(--mono);}
+.lp-label{font-size:9px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;}
+
+/* PHOTO PLACEHOLDER */
+.photo-ph{background:var(--bg3);border:0.5px dashed var(--border2);border-radius:12px;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:10px;}
+.photo-icon{font-size:28px;opacity:.25;margin-bottom:6px;}
+.photo-text{font-size:10px;color:var(--text3);text-align:center;line-height:1.5;}
+
+/* WAREHOUSE MAP */
+.wmap{background:var(--bg3);border-radius:12px;padding:10px 12px;margin-bottom:10px;}
+.wmap-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.wmap-grid{display:flex;flex-direction:column;gap:3px;}
+.wmap-row{display:flex;gap:3px;align-items:center;}
+.wmap-rl{font-size:10px;font-weight:600;color:var(--text2);width:16px;flex-shrink:0;font-family:var(--mono);}
+.wmap-cell{flex:1;height:16px;border-radius:2px;background:var(--border);}
+.wmap-cell.hl{background:var(--teal);}
+.wmap-entrance{text-align:center;font-size:8px;color:var(--text3);margin-top:4px;padding-top:4px;border-top:0.5px dashed var(--border2);}
+
+/* QR FINDER */
+.qr-box{position:relative;width:200px;height:200px;margin:10px auto;background:var(--bg3);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+.qr-c{position:absolute;width:24px;height:24px;border-color:var(--teal);border-style:solid;}
+.qr-tl{top:8px;left:8px;border-width:2px 0 0 2px;border-radius:2px 0 0 0;}
+.qr-tr{top:8px;right:8px;border-width:2px 2px 0 0;border-radius:0 2px 0 0;}
+.qr-bl{bottom:8px;left:8px;border-width:0 0 2px 2px;border-radius:0 0 0 2px;}
+.qr-br{bottom:8px;right:8px;border-width:0 2px 2px 0;border-radius:0 0 2px 0;}
+.qr-line{position:absolute;width:80%;height:2px;background:var(--teal);opacity:.7;animation:qrscan 2s infinite ease-in-out;}
+@keyframes qrscan{0%{top:20%}50%{top:75%}100%{top:20%}}
+
+/* ALERT ITEMS */
+.alert-item{background:var(--bg2);border-radius:10px;padding:10px 12px;margin-bottom:7px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;}
+.alert-item.out{border-left:3px solid var(--red);border-radius:0 10px 10px 0;}
+.alert-item.low{border-left:3px solid var(--amber);border-radius:0 10px 10px 0;}
+.ai-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.ai-text{flex:1;}
+.ai-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.ai-meta{font-size:10px;color:var(--text3);line-height:1.4;}
+.ai-qty{text-align:right;flex-shrink:0;}
+.ai-qnum{font-size:16px;font-weight:600;}
+.ai-qlabel{font-size:9px;color:var(--text3);}
+
+/* RECENT ROW */
+.recent-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);cursor:pointer;}
+.recent-row:last-child{border:none;}
+.recent-icon{font-size:13px;opacity:.4;flex-shrink:0;}
+.recent-text{flex:1;font-size:12px;color:var(--text2);}
+.recent-loc{font-size:10px;font-family:var(--mono);color:var(--teal);}
+.recent-arrow{font-size:11px;color:var(--text3);}
+
+/* HISTORY ITEM */
+.hist-item{display:flex;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);}
+.hist-item:last-child{border:none;}
+.hist-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.hist-text{flex:1;font-size:11px;color:var(--text2);line-height:1.5;}
+.hist-text strong{color:var(--text);}
+.hist-time{font-size:9px;color:var(--text3);white-space:nowrap;}
+
+/* NOTIFICATION ITEM */
+.notif-item{display:flex;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);}
+.notif-item:last-child{border:none;}
+.notif-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.notif-text{flex:1;font-size:11px;color:var(--text2);line-height:1.5;}
+.notif-text strong{color:var(--text);}
+.notif-time{font-size:9px;color:var(--text3);white-space:nowrap;}
+
+/* CATEGORY CARD */
+.cat-card{background:var(--bg2);border-radius:12px;border:0.5px solid var(--border);padding:12px 14px;margin-bottom:7px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .12s;}
+.cat-card:active{transform:scale(0.98);}
+.cat-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.cat-info{flex:1;}
+.cat-name{font-size:13px;font-weight:600;color:var(--text);}
+.cat-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.cat-count{font-size:16px;font-weight:600;color:var(--teal);}
+
+/* SETTINGS ROW */
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid var(--border);}
+.set-row:last-child{border:none;}
+.set-label{font-size:13px;color:var(--text);}
+.set-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.toggle{width:40px;height:22px;background:var(--bg4);border-radius:11px;position:relative;cursor:pointer;transition:background .2s;}
+.toggle.on{background:var(--teal);}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .2s;}
+.toggle.on::after{left:20px;}
+
+/* INSTALL BANNER */
+#install-banner{display:none;background:var(--teal);padding:10px 14px;flex-shrink:0;}
+#install-banner p{color:#0A1628;font-size:12px;font-weight:500;margin-bottom:5px;}
+.ib-btns{display:flex;gap:8px;}
+.ib-install{padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);background:#0A1628;color:var(--teal);border:none;}
+.ib-later{padding:5px 12px;border-radius:8px;font-size:11px;cursor:pointer;font-family:var(--font);background:transparent;color:rgba(10,22,40,0.6);border:0.5px solid rgba(10,22,40,0.3);}
+
+/* TOAST */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg2);border:0.5px solid var(--teal);color:var(--teal);font-size:12px;padding:8px 16px;border-radius:20px;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;font-weight:500;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:10px;}
+.loading-spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:11px;color:var(--text3);}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;}
+.empty-icon{font-size:40px;opacity:.2;margin-bottom:10px;}
+.empty-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:4px;}
+.empty-sub{font-size:11px;color:var(--text3);}
+
+/* BAR */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.bar-label{font-size:10px;color:var(--text2);width:80px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.bar-fill{height:5px;border-radius:3px;transition:width .5s;}
+.bar-val{font-size:10px;font-weight:600;width:30px;text-align:right;flex-shrink:0;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="install-banner">
+  <p>Install SpareMap on your home screen for offline access</p>
+  <div class="ib-btns">
+    <button class="ib-install" onclick="installPWA()">Install app</button>
+    <button class="ib-later" onclick="this.closest('#install-banner').style.display='none'">Later</button>
+  </div>
+</div>
+
+<div class="sbar">
+  <span class="sbar-time" id="clock">09:31</span>
+  <div class="sbar-r"><span id="online-dot" style="color:var(--teal);font-size:10px;">●</span><span id="online-txt">Online</span></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: HOME                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen on" id="s-home">
+  <div class="hdr" style="background:linear-gradient(135deg,#0F2040,#0A1628);">
+    <div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.01em;">SpareMap</div>
+      <div style="font-size:10px;color:var(--text3);">Solar Plant 1 · خريطة قطع الغيار</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <span style="font-size:18px;cursor:pointer;position:relative;" onclick="goTo('notifications')">
+        🔔
+        <span id="notif-dot" style="position:absolute;top:-1px;right:-1px;width:8px;height:8px;background:var(--red);border-radius:50%;border:1.5px solid var(--bg2);"></span>
+      </span>
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--teal-dim);border:1.5px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--teal);font-weight:700;">AH</div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="search-wrap" onclick="goTo('search')" style="cursor:pointer;">
+      <span class="search-icon">🔍</span>
+      <span style="font-size:13px;color:var(--text3);">Search parts, SAP code, equipment...</span>
+    </div>
+    <div class="stat-grid" id="home-stats">
+      <div class="stat"><div class="stat-num" style="color:var(--teal);">—</div><div class="stat-label">Total parts</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--amber);">—</div><div class="stat-label">Low stock</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--red);">—</div><div class="stat-label">Out of stock</div></div>
+      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Warehouse rows</div></div>
+    </div>
+    <div class="sec">Quick access / وصول سريع</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div class="card" style="padding:12px;text-align:center;cursor:pointer;" onclick="goTo('scan')">
+        <div style="font-size:22px;margin-bottom:5px;">📷</div>
+        <div style="font-size:12px;font-weight:600;">Scan QR</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px;">مسح رمز QR</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center;cursor:pointer;" onclick="goTo('alerts')">
+        <div style="font-size:22px;margin-bottom:5px;">⚠️</div>
+        <div style="font-size:12px;font-weight:600;">Stock alerts</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px;">تنبيهات المخزون</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center;cursor:pointer;" onclick="goTo('categories')">
+        <div style="font-size:22px;margin-bottom:5px;">📦</div>
+        <div style="font-size:12px;font-weight:600;">Categories</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px;">التصنيفات</div>
+      </div>
+      <div class="card" style="padding:12px;text-align:center;cursor:pointer;" onclick="goTo('history')">
+        <div style="font-size:22px;margin-bottom:5px;">📋</div>
+        <div style="font-size:12px;font-weight:600;">Activity log</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px;">سجل النشاط</div>
+      </div>
+    </div>
+    <div class="sec">Recently viewed / الأخيرة</div>
+    <div class="card" style="padding:6px 12px;" id="recent-list">
+      <div class="loading"><div class="loading-spinner"></div></div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('home')"><span class="bni-icon on" style="color:var(--teal);">🏠</span><span class="bni-label on">Home</span></div>
+    <div class="bni" onclick="goTo('search')"><span class="bni-icon">🔍</span><span class="bni-label">Search</span></div>
+    <div class="bni" onclick="goTo('scan')"><span class="bni-icon">📷</span><span class="bni-label">Scan</span></div>
+    <div class="bni" onclick="goTo('categories')"><span class="bni-icon">📦</span><span class="bni-label">Categories</span></div>
+    <div class="bni" onclick="goTo('alerts')"><span class="bni-icon">🔔</span><span class="bni-label">Alerts</span><div class="bni-badge" id="alert-badge">4</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: SEARCH                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-search">
+  <div class="hdr">
+    <span class="hdr-back" onclick="goTo('home')">← Back</span>
+    <div class="hdr-center"><div class="hdr-title">Search parts</div><div class="hdr-sub">ابحث عن قطع الغيار</div></div>
+    <span style="font-size:10px;color:var(--text3);cursor:pointer;" onclick="toggleLang()">EN|عر</span>
+  </div>
+  <div class="body">
+    <div class="search-wrap" style="margin-bottom:12px;">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-input" placeholder="Part name, SAP code, equipment..." oninput="doSearch()" autofocus autocomplete="off"/>
+      <span id="search-clear" style="font-size:14px;color:var(--text3);cursor:pointer;display:none;" onclick="clearSearch()">✕</span>
+    </div>
+    <div class="filter-scroll" id="filter-tabs">
+      <button class="ft on" onclick="setFilter('all',this)">All</button>
+      <button class="ft" onclick="setFilter('electrical',this)">Electrical</button>
+      <button class="ft" onclick="setFilter('mechanical',this)">Mechanical</button>
+      <button class="ft" onclick="setFilter('bess',this)">BESS</button>
+      <button class="ft" onclick="setFilter('consumable',this)">Consumable</button>
+      <button class="ft" onclick="setFilter('safety',this)">Safety</button>
+      <button class="ft" onclick="setFilter('low',this)">Low stock</button>
+      <button class="ft" onclick="setFilter('out',this)">Out of stock</button>
+    </div>
+    <div id="search-results"><div class="sec">Recent searches / الأخيرة</div><div class="card" style="padding:6px 12px;" id="search-recent"></div></div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('home')"><span class="bni-icon">🏠</span><span class="bni-label">Home</span></div>
+    <div class="bni"><span class="bni-icon on" style="color:var(--teal);">🔍</span><span class="bni-label on">Search</span></div>
+    <div class="bni" onclick="goTo('scan')"><span class="bni-icon">📷</span><span class="bni-label">Scan</span></div>
+    <div class="bni" onclick="goTo('categories')"><span class="bni-icon">📦</span><span class="bni-label">Categories</span></div>
+    <div class="bni" onclick="goTo('alerts')"><span class="bni-icon">🔔</span><span class="bni-label">Alerts</span><div class="bni-badge">4</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: PART DETAIL                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-part">
+  <div class="hdr">
+    <span class="hdr-back" id="part-back" onclick="goTo('search')">← Search</span>
+    <div class="hdr-center"><div class="hdr-title">Part detail</div><div class="hdr-sub">تفاصيل القطعة</div></div>
+    <span class="hdr-action" onclick="sharePart()">Share</span>
+  </div>
+  <div class="body" id="part-body">
+    <div class="loading"><div class="loading-spinner"></div><div class="loading-text">Loading...</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: LOCATION                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-location">
+  <div class="hdr">
+    <span class="hdr-back" onclick="goTo('part')">← Part</span>
+    <div class="hdr-center"><div class="hdr-title">Location</div><div class="hdr-sub">الموقع في المستودع</div></div>
+    <span class="hdr-action" onclick="shareLocation()">Share</span>
+  </div>
+  <div class="body" id="location-body">
+    <div class="loading"><div class="loading-spinner"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: QR SCAN                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-scan">
+  <div class="hdr">
+    <span class="hdr-back" onclick="goTo('home')">← Home</span>
+    <div class="hdr-center"><div class="hdr-title">Scan QR / barcode</div><div class="hdr-sub">امسح رمز القطعة أو الصندوق</div></div>
+    <span class="hdr-action" onclick="toast('Torch toggled')">🔦</span>
+  </div>
+  <div class="body" style="display:flex;flex-direction:column;align-items:center;">
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px;line-height:1.6;">Point camera at any part label or bin label<br><span style="direction:rtl;display:block;">وجّه الكاميرا نحو ملصق القطعة أو الصندوق</span></p>
+    <div class="qr-box">
+      <div class="qr-c qr-tl"></div><div class="qr-c qr-tr"></div>
+      <div class="qr-c qr-bl"></div><div class="qr-c qr-br"></div>
+      <div class="qr-line"></div>
+      <span style="font-size:36px;opacity:.12;">📷</span>
+    </div>
+    <button class="btn btn-primary" style="width:80%;margin-top:4px;" onclick="simulateScan()">Simulate scan / محاكاة مسح</button>
+    <div style="width:100%;font-size:10px;color:var(--text3);text-align:center;margin:10px 0;">— or search manually / أو ابحث يدوياً —</div>
+    <input placeholder="SAP code or bin address (B-03-07)..." style="margin-bottom:8px;" id="manual-scan" onkeyup="if(event.key==='Enter')manualScan()"/>
+    <button class="btn btn-secondary" onclick="manualScan()">Search / بحث</button>
+    <div class="sec" style="width:100%;">Recently scanned / الأخيرة</div>
+    <div style="width:100%;" id="scan-recent"></div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('home')"><span class="bni-icon">🏠</span><span class="bni-label">Home</span></div>
+    <div class="bni" onclick="goTo('search')"><span class="bni-icon">🔍</span><span class="bni-label">Search</span></div>
+    <div class="bni"><span class="bni-icon on" style="color:var(--teal);">📷</span><span class="bni-label on">Scan</span></div>
+    <div class="bni" onclick="goTo('categories')"><span class="bni-icon">📦</span><span class="bni-label">Categories</span></div>
+    <div class="bni" onclick="goTo('alerts')"><span class="bni-icon">🔔</span><span class="bni-label">Alerts</span><div class="bni-badge">4</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: CATEGORIES                                         -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-categories">
+  <div class="hdr">
+    <span></span>
+    <div class="hdr-center"><div class="hdr-title">Categories</div><div class="hdr-sub">تصنيفات قطع الغيار</div></div>
+    <span></span>
+  </div>
+  <div class="body">
+    <div class="sec">By part type / حسب نوع القطعة</div>
+    <div id="cat-by-type"></div>
+    <div class="sec">By equipment / حسب المعدة</div>
+    <div class="cat-card" onclick="filterAndGo('SMA Inverter')">
+      <div class="cat-icon" style="background:#1A2A10;">☀️</div>
+      <div class="cat-info"><div class="cat-name">SMA Inverter</div><div class="cat-sub">Cooling fans, control boards, sensors</div></div>
+      <span style="font-size:11px;color:var(--text3);">›</span>
+    </div>
+    <div class="cat-card" onclick="filterAndGo('Wind Turbine')">
+      <div class="cat-icon" style="background:#101A2A;">💨</div>
+      <div class="cat-info"><div class="cat-name">Wind Turbine (Vestas)</div><div class="cat-sub">Bearings, seals, gearbox, pitch</div></div>
+      <span style="font-size:11px;color:var(--text3);">›</span>
+    </div>
+    <div class="cat-card" onclick="filterAndGo('BESS CATL')">
+      <div class="cat-icon" style="background:#1A1030;">🔋</div>
+      <div class="cat-info"><div class="cat-name">BESS (CATL EnerOne)</div><div class="cat-sub">Fuses, BMS cards, contactors</div></div>
+      <span style="font-size:11px;color:var(--text3);">›</span>
+    </div>
+    <div class="cat-card" onclick="filterAndGo('Tracker System')">
+      <div class="cat-icon" style="background:#10201A;">⚡</div>
+      <div class="cat-info"><div class="cat-name">Tracker system (Nextracker)</div><div class="cat-sub">Motors, controllers, actuators</div></div>
+      <span style="font-size:11px;color:var(--text3);">›</span>
+    </div>
+    <div class="cat-card" onclick="filterAndGo('BOS General')">
+      <div class="cat-icon" style="background:#102030;">🔌</div>
+      <div class="cat-info"><div class="cat-name">Balance of system (BOS)</div><div class="cat-sub">Breakers, cables, connectors</div></div>
+      <span style="font-size:11px;color:var(--text3);">›</span>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('home')"><span class="bni-icon">🏠</span><span class="bni-label">Home</span></div>
+    <div class="bni" onclick="goTo('search')"><span class="bni-icon">🔍</span><span class="bni-label">Search</span></div>
+    <div class="bni" onclick="goTo('scan')"><span class="bni-icon">📷</span><span class="bni-label">Scan</span></div>
+    <div class="bni"><span class="bni-icon on" style="color:var(--teal);">📦</span><span class="bni-label on">Categories</span></div>
+    <div class="bni" onclick="goTo('alerts')"><span class="bni-icon">🔔</span><span class="bni-label">Alerts</span><div class="bni-badge">4</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: ALERTS                                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-alerts">
+  <div class="hdr">
+    <span></span>
+    <div class="hdr-center"><div class="hdr-title">Stock alerts</div><div class="hdr-sub">تنبيهات المخزون</div></div>
+    <span class="hdr-action" onclick="toast('Alert list exported ✓')">Export</span>
+  </div>
+  <div class="body">
+    <div class="stat-grid" id="alert-stats">
+      <div class="stat"><div class="stat-num" style="color:var(--red);">—</div><div class="stat-label">Out of stock</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--amber);">—</div><div class="stat-label">Below minimum</div></div>
+    </div>
+    <div class="sec" style="color:var(--red);">Out of stock — immediate action</div>
+    <div id="out-list"></div>
+    <div class="sec" style="color:var(--amber);">Low stock — reorder soon</div>
+    <div id="low-list"></div>
+  </div>
+  <div class="bnav">
+    <div class="bni" onclick="goTo('home')"><span class="bni-icon">🏠</span><span class="bni-label">Home</span></div>
+    <div class="bni" onclick="goTo('search')"><span class="bni-icon">🔍</span><span class="bni-label">Search</span></div>
+    <div class="bni" onclick="goTo('scan')"><span class="bni-icon">📷</span><span class="bni-label">Scan</span></div>
+    <div class="bni" onclick="goTo('categories')"><span class="bni-icon">📦</span><span class="bni-label">Categories</span></div>
+    <div class="bni"><span class="bni-icon on" style="color:var(--teal);">🔔</span><span class="bni-label on">Alerts</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: HISTORY / ACTIVITY LOG                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-history">
+  <div class="hdr">
+    <span class="hdr-back" onclick="goTo('home')">← Home</span>
+    <div class="hdr-center"><div class="hdr-title">Activity log</div><div class="hdr-sub">سجل النشاط</div></div>
+    <span class="hdr-action" onclick="toast('Log exported ✓')">Export</span>
+  </div>
+  <div class="body">
+    <div class="sec">Today / اليوم</div>
+    <div class="card" style="padding:6px 12px;">
+      <div class="hist-item"><div class="hist-dot" style="background:var(--teal);"></div><div class="hist-text"><strong>Part collected:</strong> SMA cooling fan ×2 — WO #2251 — Ahmed Hassan</div><div class="hist-time">09:28</div></div>
+      <div class="hist-item"><div class="hist-dot" style="background:var(--blue);"></div><div class="hist-text"><strong>Part searched:</strong> DC breaker 32A — found at C·5·1 — Khalid Omar</div><div class="hist-time">09:15</div></div>
+      <div class="hist-item"><div class="hist-dot" style="background:var(--amber);"></div><div class="hist-text"><strong>Low stock alert:</strong> AC surge protection SPD dropped to 3 pcs (min: 10)</div><div class="hist-time">08:45</div></div>
+      <div class="hist-item"><div class="hist-dot" style="background:var(--teal);"></div><div class="hist-text"><strong>Stock received:</strong> MC4 connectors +120 pairs — new delivery — Storekeeper</div><div class="hist-time">08:30</div></div>
+      <div class="hist-item"><div class="hist-dot" style="background:var(--red);"></div><div class="hist-text"><strong>Out of stock:</strong> Inverter control board SMA — last unit issued WO #2238</div><div class="hist-time">07:55</div></div>
+    </div>
+    <div class="sec">Yesterday / أمس</div>
+    <div class="card" style="padding:6px 12px;">
+      <div class="hist-item"><div class="hist-dot" style="background:var(--teal);"></div><div class="hist-text"><strong>Part collected:</strong> BESS fuse 63A ×3 — WO #2247 — Faris Rashid</div><div class="hist-time">14:22</div></div>
+      <div class="hist-item"><div class="hist-dot" style="background:var(--teal);"></div><div class="hist-text"><strong>Part collected:</strong> Bearing grease EP2 ×1 — Turbine PM — Mohammed Ali</div><div class="hist-time">11:10</div></div>
+      <div class="hist-item" style="border:none;"><div class="hist-dot" style="background:var(--purple);"></div><div class="hist-text"><strong>New part added:</strong> Cable gland M32 SS ×50 — D·3·7 — Admin</div><div class="hist-time">09:00</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: NOTIFICATIONS                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-notifications">
+  <div class="hdr">
+    <span class="hdr-back" onclick="goTo('home')">← Home</span>
+    <div class="hdr-center"><div class="hdr-title">Notifications</div><div class="hdr-sub">الإشعارات</div></div>
+    <span class="hdr-action" onclick="toast('All marked as read ✓')">Mark all</span>
+  </div>
+  <div class="body">
+    <div class="sec">Today / اليوم</div>
+    <div class="card" style="padding:6px 12px;">
+      <div class="notif-item"><div class="notif-dot" style="background:var(--red);"></div><div class="notif-text"><strong>Out of stock:</strong> Inverter control board SMA STP — A·1·2 — last unit issued</div><div class="notif-time">07:55</div></div>
+      <div class="notif-item"><div class="notif-dot" style="background:var(--amber);"></div><div class="notif-text"><strong>Low stock:</strong> AC surge protection SPD — 3 remaining, min is 10 — reorder now</div><div class="notif-time">08:45</div></div>
+      <div class="notif-item"><div class="notif-dot" style="background:var(--teal);"></div><div class="notif-text"><strong>Stock received:</strong> MC4 connectors +120 pairs added to D·2·1</div><div class="notif-time">08:30</div></div>
+    </div>
+    <div class="sec">Yesterday / أمس</div>
+    <div class="card" style="padding:6px 12px;">
+      <div class="notif-item"><div class="notif-dot" style="background:var(--amber);"></div><div class="notif-text"><strong>Low stock:</strong> BESS fuse 63A — 5 remaining, min is 15 — critical for BESS maintenance</div><div class="notif-time">16:00</div></div>
+      <div class="notif-item" style="border:none;"><div class="notif-dot" style="background:var(--red);"></div><div class="notif-text"><strong>Out of stock:</strong> Safety gloves 33kV — J·1·2 — safety critical, order immediately</div><div class="notif-time">14:30</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCREEN: SETTINGS / PROFILE                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-settings">
+  <div class="hdr">
+    <span></span>
+    <div class="hdr-center"><div class="hdr-title">Profile & settings</div><div class="hdr-sub">الملف الشخصي</div></div>
+    <span class="hdr-action" onclick="toast('Saved ✓')">Save</span>
+  </div>
+  <div class="body">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div style="width:54px;height:54px;border-radius:50%;background:var(--teal-dim);border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--teal);">AH</div>
+      <div>
+        <div style="font-size:17px;font-weight:700;color:var(--text);">Ahmed Hassan</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Senior Technician · Solar Plant 1</div>
+        <div style="margin-top:5px;"><span class="badge b-teal">Technician</span></div>
+      </div>
+    </div>
+    <div class="sec">Language / اللغة</div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:13px;color:var(--text);">App language</span>
+      <div style="display:flex;gap:6px;">
+        <button class="badge b-teal" style="border:none;cursor:pointer;font-family:var(--font);padding:5px 12px;" onclick="toast('Language: English')">English</button>
+        <button class="badge b-gray" style="border:none;cursor:pointer;font-family:var(--font);padding:5px 12px;" onclick="toast('تم تغيير اللغة إلى العربية')">العربية</button>
+      </div>
+    </div>
+    <div class="sec">Offline storage / التخزين</div>
+    <div class="card">
+      <div class="set-row"><div><div class="set-label">Parts cached offline</div><div class="set-sub">Ready without internet</div></div><span style="font-size:13px;font-weight:600;color:var(--teal);" id="cache-count">18 parts</span></div>
+      <div class="set-row"><div><div class="set-label">App storage used</div></div><span style="font-size:13px;font-weight:600;color:var(--text);">0.8 MB</span></div>
+      <div class="set-row" style="border:none;"><div><div class="set-label">Last sync</div></div><span style="font-size:12px;color:var(--text3);" id="last-sync">Today 09:21</span></div>
+      <button class="btn btn-secondary" style="margin-top:6px;font-size:11px;" onclick="toast('Sync complete ✓')">Force sync / مزامنة الآن</button>
+    </div>
+    <div class="sec">Notifications / الإشعارات</div>
+    <div class="card">
+      <div class="set-row"><div><div class="set-label">Out of stock alerts</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="set-row"><div><div class="set-label">Low stock alerts</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="set-row" style="border:none;"><div><div class="set-label">Daily stock summary</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+    </div>
+    <div class="sec">About / حول التطبيق</div>
+    <div class="card">
+      <div class="dr"><span class="dr-label">App name</span><span class="dr-val">SpareMap</span></div>
+      <div class="dr"><span class="dr-label">Version</span><span class="dr-val" style="font-family:var(--mono);font-size:11px;">v1.0.0 · PWA</span></div>
+      <div class="dr"><span class="dr-label">Data source</span><span class="dr-val"><span class="badge b-amber">Phase 1 · Excel</span></span></div>
+      <div class="dr"><span class="dr-label">SAP B1 integration</span><span class="dr-val"><span class="badge b-gray">Phase 2 · Pending</span></span></div>
+    </div>
+    <button class="btn btn-danger" onclick="if(confirm('Sign out?'))goTo('home')">Sign out / تسجيل الخروج</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════ */
+const S = {
+  currentPart: null,
+  currentFilter: 'all',
+  searchQuery: '',
+  recentParts: [],
+  history: [],
+  deferredPrompt: null,
+  lang: 'en'
+};
+
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════════════════ */
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  const el = document.getElementById('s-' + id);
+  if (el) { el.classList.add('on'); el.querySelector('.body') && (el.querySelector('.body').scrollTop = 0); }
+  if (id === 'home') loadHome();
+  if (id === 'alerts') loadAlerts();
+  if (id === 'categories') loadCategories();
+  if (id === 'scan') loadScanRecent();
+  if (id === 'search') { setTimeout(() => document.getElementById('search-input')?.focus(), 200); loadSearchRecent(); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   HOME
+════════════════════════════════════════════════════════ */
+async function loadHome() {
+  const stats = await DB.getStats();
+  const el = document.getElementById('home-stats');
+  el.innerHTML = `
+    <div class="stat"><div class="stat-num" style="color:var(--teal);">${stats.total}</div><div class="stat-label">Total parts</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--amber);">${stats.low}</div><div class="stat-label">Low stock</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--red);">${stats.out}</div><div class="stat-label">Out of stock</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Warehouse rows</div></div>`;
+  const badge = document.getElementById('alert-badge');
+  if (badge) badge.textContent = stats.out + stats.low;
+  const rl = document.getElementById('recent-list');
+  if (S.recentParts.length === 0) {
+    const all = await DB.getAll();
+    S.recentParts = all.slice(0, 4);
+  }
+  rl.innerHTML = S.recentParts.slice(0,4).map(p => `
+    <div class="recent-row" onclick="openPart('${p.id}','home')">
+      <span class="recent-icon">🕐</span>
+      <span class="recent-text">${p.name_en}</span>
+      <span class="recent-loc">${p.row}·${p.shelf}·${p.bin}</span>
+      <span class="recent-arrow">›</span>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEARCH
+════════════════════════════════════════════════════════ */
+let searchTimer;
+function doSearch() {
+  clearTimeout(searchTimer);
+  const q = document.getElementById('search-input').value;
+  S.searchQuery = q;
+  document.getElementById('search-clear').style.display = q ? 'block' : 'none';
+  searchTimer = setTimeout(() => renderSearch(q), 180);
+}
+
+async function renderSearch(q) {
+  const res = document.getElementById('search-results');
+  if (!q.trim() && S.currentFilter === 'all') {
+    loadSearchRecent();
+    return;
+  }
+  const parts = await DB.search(q, S.currentFilter);
+  if (parts.length === 0) {
+    res.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No parts found</div><div class="empty-sub">Try a different name, SAP code, or equipment</div></div>`;
+    return;
+  }
+  res.innerHTML = `<div class="sec">${parts.length} result${parts.length>1?'s':''} found</div>` + parts.map(partCard).join('');
+}
+
+function setFilter(cat, btn) {
+  document.querySelectorAll('#filter-tabs .ft').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  S.currentFilter = cat;
+  renderSearch(S.searchQuery);
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  S.searchQuery = '';
+  document.getElementById('search-clear').style.display = 'none';
+  S.currentFilter = 'all';
+  document.querySelectorAll('#filter-tabs .ft').forEach((b,i) => b.classList.toggle('on', i===0));
+  loadSearchRecent();
+}
+
+function loadSearchRecent() {
+  const res = document.getElementById('search-results');
+  const recents = [
+    {q:'cooling fan', label:'cooling fan'}, {q:'DC breaker', label:'DC breaker 32A'},
+    {q:'BESS', label:'BESS parts'}, {q:'SMA', label:'SMA inverter parts'},
+    {q:'فيوز', label:'فيوز · Fuse'}
+  ];
+  res.innerHTML = `<div class="sec">Recent searches / الأخيرة</div>
+    <div class="card" style="padding:6px 12px;" id="search-recent">
+      ${recents.map(r => `<div class="recent-row" onclick="loadSearch('${r.q}')"><span class="recent-icon">🕐</span><span class="recent-text">${r.label}</span><span class="recent-arrow">›</span></div>`).join('')}
+    </div>`;
+}
+
+function loadSearch(q) {
+  document.getElementById('search-input').value = q;
+  doSearch();
+  document.getElementById('search-input').focus();
+}
+
+function filterAndGo(equip) {
+  goTo('search');
+  setTimeout(() => {
+    document.getElementById('search-input').value = equip;
+    doSearch();
+  }, 100);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PART CARD HTML
+════════════════════════════════════════════════════════ */
+function partCard(p, fromScreen) {
+  const qColor = p.qty === 0 ? 'var(--red)' : p.qty <= p.min_qty ? 'var(--amber)' : 'var(--teal)';
+  const cardClass = p.qty === 0 ? 'out' : p.qty <= p.min_qty ? 'low' : '';
+  const statusBadge = p.qty === 0 ? '<span class="badge b-red">Out of stock</span>' : p.qty <= p.min_qty ? '<span class="badge b-amber">Low stock</span>' : '';
+  const catBadge = {Electrical:'b-teal',Mechanical:'b-gray',BESS:'b-purple',Consumable:'b-amber',Safety:'b-red'}[p.category] || 'b-gray';
+  return `<div class="part-card ${cardClass}" onclick="openPart('${p.id}','search')">
+    <div class="pc-top">
+      <span class="pc-name">${p.name_en}</span>
+      <span class="pc-qty" style="color:${qColor};">${p.qty}</span>
+    </div>
+    <div class="pc-arabic">${p.name_ar}</div>
+    <div class="pc-meta">
+      <span class="loc">${p.row}·${p.shelf}·${p.bin}</span>
+      <span class="badge ${catBadge}">${p.category}</span>
+      <span class="badge b-gray" style="font-family:var(--mono);font-size:8px;">${p.sap}</span>
+      ${statusBadge}
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   OPEN PART DETAIL
+════════════════════════════════════════════════════════ */
+async function openPart(id, from) {
+  const p = await DB.getById(id);
+  if (!p) return;
+  S.currentPart = p;
+  if (!S.recentParts.find(r => r.id === id)) {
+    S.recentParts.unshift(p);
+    if (S.recentParts.length > 6) S.recentParts.pop();
+  }
+  const back = document.getElementById('part-back');
+  if (back) back.onclick = () => goTo(from || 'search');
+  const qColor = p.qty === 0 ? 'var(--red)' : p.qty <= p.min_qty ? 'var(--amber)' : 'var(--teal)';
+  const statusBadge = p.qty === 0 ? '<span class="badge b-red">Out of stock</span>' : p.qty <= p.min_qty ? '<span class="badge b-amber">Low stock</span>' : '<span class="badge b-green">In stock</span>';
+  const catBadge = {Electrical:'b-teal',Mechanical:'b-gray',BESS:'b-purple',Consumable:'b-amber',Safety:'b-red'}[p.category] || 'b-gray';
+  document.getElementById('part-body').innerHTML = `
+    <div class="card" style="margin-bottom:10px;">
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.3;">${p.name_en}</div>
+      <div style="font-size:11px;color:var(--text3);direction:rtl;margin-bottom:10px;">${p.name_ar}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <span class="badge ${catBadge}">${p.category}</span>
+        <span class="badge b-blue">${p.equipment}</span>
+        ${statusBadge}
+        <span style="font-family:var(--mono);font-size:9px;background:var(--bg4);padding:2px 7px;border-radius:6px;color:var(--text2);">${p.sap}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div class="stat"><div class="stat-num" style="color:${qColor};">${p.qty}</div><div class="stat-label">In stock</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--amber);">${p.min_qty}</div><div class="stat-label">Min level</div></div>
+      <div class="stat"><div class="stat-num" style="font-size:16px;">${p.unit}</div><div class="stat-label">Unit</div></div>
+    </div>
+    <div class="sec">Part information</div>
+    <div class="card">
+      <div class="dr"><span class="dr-label">Manufacturer</span><span class="dr-val">${p.manufacturer}</span></div>
+      <div class="dr"><span class="dr-label">Part number</span><span class="dr-val" style="font-family:var(--mono);font-size:11px;">${p.part_number}</span></div>
+      <div class="dr"><span class="dr-label">Compatible with</span><span class="dr-val">${p.compatible}</span></div>
+      <div class="dr"><span class="dr-label">Condition</span><span class="dr-val"><span class="badge b-green">${p.condition}</span></span></div>
+      <div class="dr"><span class="dr-label">Last updated</span><span class="dr-val">${p.last_updated}</span></div>
+      <div class="dr"><span class="dr-label">Updated by</span><span class="dr-val">${p.updated_by}</span></div>
+    </div>
+    ${p.notes ? `<div class="sec">Notes / ملاحظات</div><div class="card" style="font-size:12px;color:var(--text2);line-height:1.6;">${p.notes}</div>` : ''}
+    <button class="btn btn-primary" onclick="openLocation()">Find in warehouse / العثور في المستودع →</button>
+    <button class="btn btn-secondary" onclick="toast('Issue request created for WO ✓')">Request issue / طلب صرف</button>
+  `;
+  goTo('part');
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOCATION SCREEN
+════════════════════════════════════════════════════════ */
+function openLocation() {
+  const p = S.currentPart;
+  if (!p) return;
+  const rows = ['A','B','C','D','E','F','G','H','I','J'];
+  const mapRows = rows.map(r => {
+    const cells = [1,2,3,4,5,6].map(s => `<div class="wmap-cell ${r===p.row?'hl':''}"></div>`).join('');
+    return `<div class="wmap-row"><span class="wmap-rl">${r}</span>${cells}</div>`;
+  }).join('');
+  const qColor = p.qty === 0 ? 'var(--red)' : p.qty <= p.min_qty ? 'var(--amber)' : 'var(--teal)';
+  document.getElementById('location-body').innerHTML = `
+    <div class="loc-display">
+      <div class="loc-tag">Exact location / الموقع الدقيق</div>
+      <div class="loc-addr">${p.row} · ${p.shelf} · ${p.bin}</div>
+      <div class="loc-parts">
+        <div class="lp"><div class="lp-val">${p.row}</div><div class="lp-label">Row / صف</div></div>
+        <div style="color:var(--teal);font-size:22px;align-self:center;">·</div>
+        <div class="lp"><div class="lp-val">${p.shelf}</div><div class="lp-label">Shelf / رف</div></div>
+        <div style="color:var(--teal);font-size:22px;align-self:center;">·</div>
+        <div class="lp"><div class="lp-val">${p.bin}</div><div class="lp-label">Bin / صندوق</div></div>
+      </div>
+    </div>
+    <div class="photo-ph">
+      <div class="photo-icon">📷</div>
+      <div class="photo-text">Bin photo · Row ${p.row} · Shelf ${p.shelf} · Bin ${p.bin}<br><span style="font-size:9px;color:var(--text3);">${p.name_en}</span></div>
+    </div>
+    <div class="wmap">
+      <div class="wmap-label">Warehouse map — Row ${p.row} highlighted</div>
+      <div class="wmap-grid">${mapRows}</div>
+      <div class="wmap-entrance">▼ Entrance / المدخل</div>
+    </div>
+    <div class="card">
+      <div class="dr"><span class="dr-label">Bin label</span><span class="dr-val" style="font-family:var(--mono);">${p.row}-0${p.shelf}-0${p.bin}</span></div>
+      <div class="dr"><span class="dr-label">Shelf level</span><span class="dr-val">Shelf ${p.shelf} — ${p.shelf<=2?'lower':'p.shelf<=4?'middle':'upper'} level</span></div>
+      <div class="dr"><span class="dr-label">Quantity here</span><span class="dr-val" style="color:${qColor};font-weight:700;">${p.qty} ${p.unit} available</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="toast('Collection confirmed ✓ · Stock updated'); goTo('home')">Confirm collected / تأكيد الاستلام</button>
+    <button class="btn btn-secondary" onclick="shareLocation()">Share location / مشاركة الموقع</button>
+  `;
+  goTo('location');
+}
+
+/* ═══════════════════════════════════════════════════════
+   ALERTS
+════════════════════════════════════════════════════════ */
+async function loadAlerts() {
+  const alerts = await DB.getAlerts();
+  const stats = document.getElementById('alert-stats');
+  stats.innerHTML = `
+    <div class="stat"><div class="stat-num" style="color:var(--red);">${alerts.out.length}</div><div class="stat-label">Out of stock</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--amber);">${alerts.low.length}</div><div class="stat-label">Below minimum</div></div>`;
+  const outList = document.getElementById('out-list');
+  outList.innerHTML = alerts.out.length === 0 ?
+    '<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No out-of-stock items</div></div>' :
+    alerts.out.map(p => `
+      <div class="alert-item out" onclick="openPart('${p.id}','alerts')">
+        <div class="ai-dot" style="background:var(--red);"></div>
+        <div class="ai-text">
+          <div class="ai-name">${p.name_en}</div>
+          <div class="ai-meta">${p.name_ar} · <span style="font-family:var(--mono);color:var(--teal);">${p.row}·${p.shelf}·${p.bin}</span> · ${p.sap}</div>
+          <div class="ai-meta" style="margin-top:2px;">${p.notes}</div>
+        </div>
+        <div class="ai-qty"><div class="ai-qnum" style="color:var(--red);">0</div><div class="ai-qlabel">${p.unit}</div></div>
+      </div>`).join('');
+  const lowList = document.getElementById('low-list');
+  lowList.innerHTML = alerts.low.length === 0 ?
+    '<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">All parts above minimum</div></div>' :
+    alerts.low.map(p => {
+      const pct = Math.round((p.qty / p.min_qty) * 100);
+      return `<div class="alert-item low" onclick="openPart('${p.id}','alerts')">
+        <div class="ai-dot" style="background:var(--amber);"></div>
+        <div class="ai-text">
+          <div class="ai-name">${p.name_en}</div>
+          <div class="ai-meta"><span style="font-family:var(--mono);color:var(--teal);">${p.row}·${p.shelf}·${p.bin}</span> · min: ${p.min_qty} ${p.unit}</div>
+          <div style="margin-top:6px;height:4px;background:var(--bg4);border-radius:2px;"><div style="height:4px;width:${Math.min(pct,100)}%;background:var(--amber);border-radius:2px;"></div></div>
+        </div>
+        <div class="ai-qty"><div class="ai-qnum" style="color:var(--amber);">${p.qty}</div><div class="ai-qlabel">${p.unit}</div></div>
+      </div>`;
+    }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   CATEGORIES
+════════════════════════════════════════════════════════ */
+async function loadCategories() {
+  const all = await DB.getAll();
+  const cats = {};
+  all.forEach(p => {
+    if (!cats[p.category]) cats[p.category] = {count:0, low:0, out:0};
+    cats[p.category].count++;
+    if (p.qty === 0) cats[p.category].out++;
+    else if (p.qty <= p.min_qty) cats[p.category].low++;
+  });
+  const icons = {Electrical:'⚡',Mechanical:'⚙️',BESS:'🔋',Consumable:'🧴',Safety:'🛡️',Civil:'🏗️'};
+  const colors = {Electrical:var(--teal-dim),Mechanical:'var(--bg4)',BESS:'var(--purple-dim)',Consumable:'var(--amber-dim)',Safety:'var(--red-dim)',Civil:'var(--blue-dim)'};
+  const el = document.getElementById('cat-by-type');
+  el.innerHTML = Object.entries(cats).map(([cat, info]) => `
+    <div class="cat-card" onclick="filterAndGo('${cat}')">
+      <div class="cat-icon" style="background:${colors[cat]||'var(--bg4)'};">${icons[cat]||'📦'}</div>
+      <div class="cat-info">
+        <div class="cat-name">${cat}</div>
+        <div class="cat-sub">${info.count} parts${info.out>0?` · <span style="color:var(--red);">${info.out} out of stock</span>`:''}${info.low>0?` · <span style="color:var(--amber);">${info.low} low</span>`:''}</div>
+      </div>
+      <div class="cat-count">${info.count}</div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   QR SCAN
+════════════════════════════════════════════════════════ */
+function simulateScan() {
+  toast('Scanning... QR detected ✓');
+  setTimeout(() => openPart('P001', 'scan'), 700);
+}
+function manualScan() {
+  const val = document.getElementById('manual-scan').value.trim();
+  if (!val) return;
+  goTo('search');
+  setTimeout(() => {
+    document.getElementById('search-input').value = val;
+    doSearch();
+  }, 100);
+}
+async function loadScanRecent() {
+  const el = document.getElementById('scan-recent');
+  const parts = S.recentParts.length > 0 ? S.recentParts.slice(0,3) : (await DB.getAll()).slice(0,3);
+  el.innerHTML = parts.map(p => `
+    <div class="part-card" onclick="openPart('${p.id}','scan')" style="margin-bottom:6px;">
+      <div class="pc-top"><span class="pc-name">${p.name_en}</span><span class="pc-qty" style="color:var(--teal);">${p.qty}</span></div>
+      <div class="pc-meta"><span class="loc">${p.row}·${p.shelf}·${p.bin}</span><span class="badge b-gray" style="font-family:var(--mono);font-size:8px;">${p.sap}</span></div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SHARE
+════════════════════════════════════════════════════════ */
+function sharePart() {
+  const p = S.currentPart;
+  if (!p) return;
+  const text = `${p.name_en} (${p.sap}) — Location: ${p.row}·${p.shelf}·${p.bin} — Qty: ${p.qty} ${p.unit}`;
+  if (navigator.share) navigator.share({ title: 'SpareMap part', text });
+  else navigator.clipboard?.writeText(text).then(() => toast('Part info copied ✓'));
+}
+function shareLocation() {
+  const p = S.currentPart;
+  if (!p) return;
+  const text = `${p.name_en} — Row ${p.row} · Shelf ${p.shelf} · Bin ${p.bin} (${p.row}-0${p.shelf}-0${p.bin})`;
+  if (navigator.share) navigator.share({ title: 'SpareMap location', text });
+  else navigator.clipboard?.writeText(text).then(() => toast('Location copied ✓'));
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CLOCK
+════════════════════════════════════════════════════════ */
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 15000);
+
+/* ═══════════════════════════════════════════════════════
+   ONLINE/OFFLINE
+════════════════════════════════════════════════════════ */
+function updateOnlineStatus() {
+  const dot = document.getElementById('online-dot');
+  const txt = document.getElementById('online-txt');
+  if (navigator.onLine) { dot.style.color = 'var(--teal)'; txt.textContent = 'Online'; }
+  else { dot.style.color = 'var(--amber)'; txt.textContent = 'Offline'; }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+/* ═══════════════════════════════════════════════════════
+   PWA INSTALL
+════════════════════════════════════════════════════════ */
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  S.deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'block';
+});
+function installPWA() {
+  if (S.deferredPrompt) {
+    S.deferredPrompt.prompt();
+    S.deferredPrompt.userChoice.then(() => {
+      S.deferredPrompt = null;
+      document.getElementById('install-banner').style.display = 'none';
+    });
+  } else {
+    toast('On iPhone: Share → Add to Home Screen');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOGGLE LANG (demo)
+════════════════════════════════════════════════════════ */
+function toggleLang() {
+  S.lang = S.lang === 'en' ? 'ar' : 'en';
+  toast(S.lang === 'ar' ? 'تم تغيير اللغة إلى العربية' : 'Language set to English');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SERVICE WORKER
+════════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
+loadHome();
+</script>
+</body>
+</html>
