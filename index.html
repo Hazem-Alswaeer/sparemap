@@ -852,7 +852,7 @@ function openLocation() {
     </div>
     <div class="card">
       <div class="dr"><span class="dr-label">Bin label</span><span class="dr-val" style="font-family:var(--mono);">${p.row}-0${p.shelf}-0${p.bin}</span></div>
-      <div class="dr"><span class="dr-label">Shelf level</span><span class="dr-val">Shelf ${p.shelf} — ${p.shelf<=2?'lower':'p.shelf<=4?'middle':'upper'} level</span></div>
+      <div class="dr"><span class="dr-label">Shelf level</span><span class="dr-val">Shelf ${p.shelf} — ${p.shelf<=2?'lower':p.shelf<=4?'middle':'upper'} level</span></div>
       <div class="dr"><span class="dr-label">Quantity here</span><span class="dr-val" style="color:${qColor};font-weight:700;">${p.qty} ${p.unit} available</span></div>
     </div>
     <button class="btn btn-primary" onclick="toast('Collection confirmed ✓ · Stock updated'); goTo('home')">Confirm collected / تأكيد الاستلام</button>
@@ -913,7 +913,7 @@ async function loadCategories() {
     else if (p.qty <= p.min_qty) cats[p.category].low++;
   });
   const icons = {Electrical:'⚡',Mechanical:'⚙️',BESS:'🔋',Consumable:'🧴',Safety:'🛡️',Civil:'🏗️'};
-  const colors = {Electrical:var(--teal-dim),Mechanical:'var(--bg4)',BESS:'var(--purple-dim)',Consumable:'var(--amber-dim)',Safety:'var(--red-dim)',Civil:'var(--blue-dim)'};
+  const colors = {Electrical:'var(--teal-dim)',Mechanical:'var(--bg4)',BESS:'var(--purple-dim)',Consumable:'var(--amber-dim)',Safety:'var(--red-dim)',Civil:'var(--blue-dim)'};
   const el = document.getElementById('cat-by-type');
   el.innerHTML = Object.entries(cats).map(([cat, info]) => `
     <div class="cat-card" onclick="filterAndGo('${cat}')">
